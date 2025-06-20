@@ -35,27 +35,31 @@ bool Il2CppMetadataUtils::LoadMetadataFile(const char* fileName)
         // Check Format
         ASSERT(s_GlobalMetadata, "");
         ASSERT(s_GlobalMetadataHeader->sanity == 0xFAB11BAF, "Wrong Format!");
-        ASSERT(s_GlobalMetadataHeader->version == 29, "Unsupported Versions!");
+        ASSERT(s_GlobalMetadataHeader->version == 31, "Unsupported Versions!");
         ASSERT(s_GlobalMetadataHeader->stringLiteralOffset == sizeof(Il2CppGlobalMetadataHeader), "Wrong Format!");
 
         // Create Cache
-
+        ASSERT(s_GlobalMetadataHeader->imagesSize % sizeof(Il2CppImageDefinition) == 0, "Il2CppImageDefinition Wrong Format!");
         uint32_t imageCount = s_GlobalMetadataHeader->imagesSize / sizeof(Il2CppImageDefinition);
         s_ImageCache = (XIl2CppImage*)malloc(imageCount * sizeof(XIl2CppImage));
         std::memset(s_ImageCache, 0, imageCount * sizeof(XIl2CppImage));
 
+        ASSERT(s_GlobalMetadataHeader->typeDefinitionsSize % sizeof(Il2CppTypeDefinition) == 0, "Il2CppTypeDefinition Wrong Format!");
         uint32_t typeCount = s_GlobalMetadataHeader->typeDefinitionsSize / sizeof(Il2CppTypeDefinition);
         s_TypeCache = (XIl2CppType*)malloc(typeCount * sizeof(XIl2CppType));
         std::memset(s_TypeCache, 0, typeCount * sizeof(XIl2CppType));
 
+        ASSERT(s_GlobalMetadataHeader->methodsSize % sizeof(Il2CppMethodDefinition) == 0, "Il2CppMethodDefinition Wrong Format!");
         uint32_t mtehodCount = s_GlobalMetadataHeader->methodsSize / sizeof(Il2CppMethodDefinition);
         s_MethodCache = (XIl2CppMethod*)malloc(mtehodCount * sizeof(XIl2CppMethod));
         std::memset(s_MethodCache, 0, mtehodCount * sizeof(XIl2CppMethod));
 
+        ASSERT(s_GlobalMetadataHeader->fieldsSize % sizeof(Il2CppFieldDefinition) == 0, "Il2CppFieldDefinition Wrong Format!");
         uint32_t fieldCount = s_GlobalMetadataHeader->fieldsSize / sizeof(Il2CppFieldDefinition);
         s_FieldCache = (XIl2CppField*)malloc(fieldCount * sizeof(XIl2CppField));
         std::memset(s_FieldCache, 0, fieldCount * sizeof(XIl2CppField));
 
+        ASSERT(s_GlobalMetadataHeader->parametersSize % sizeof(Il2CppParameterDefinition) == 0, "Il2CppParameterDefinition Wrong Format!");
         uint32_t parameterCount = s_GlobalMetadataHeader->parametersSize / sizeof(Il2CppParameterDefinition);
         s_ParameterCache = (XIl2CppParameter*)malloc(parameterCount * sizeof(XIl2CppParameter));
         std::memset(s_ParameterCache, 0, parameterCount * sizeof(XIl2CppParameter));
@@ -63,9 +67,9 @@ bool Il2CppMetadataUtils::LoadMetadataFile(const char* fileName)
         ASSERT(s_ImageCache && s_TypeCache && s_MethodCache && s_FieldCache && s_ParameterCache, "Memory Allocation Failed");
 
         // Load types.bin
-        ASSERT(LoadTypeData("D:\\CodeRepositories\\il2cpp\\IL2CPPUtils\\TestData\\types.bin"), "Load TypeData Failed");
+        //ASSERT(LoadTypeData("D:\\CodeRepositories\\il2cpp\\IL2CPPUtils\\TestData\\types.bin"), "Load TypeData Failed");
 
-        ASSERT(LoadMethodPointerData("D:\\CodeRepositories\\il2cpp\\IL2CPPUtils\\TestData\\method-pointer.bin"), "Load MethodPointerData Failed");
+        //ASSERT(LoadMethodPointerData("D:\\CodeRepositories\\il2cpp\\IL2CPPUtils\\TestData\\method-pointer.bin"), "Load MethodPointerData Failed");
 
         // Pre Init
         InitDefaultValue();
@@ -138,6 +142,7 @@ const char* Il2CppMetadataUtils::GetStringFromIndex(const StringIndex index)
 
 const XIl2CppType* Il2CppMetadataUtils::GetTypeFromTypeData(const TypeIndex index)
 {
+    if (!s_TypeData) return NULL;
     const TypeDefinitionIndex typeIndex = s_TypeData[index];
     if (typeIndex >= 0 && static_cast<uint32_t>(typeIndex) < s_GlobalMetadataHeader->typeDefinitionsSize / sizeof(Il2CppTypeDefinition))
     {
@@ -155,6 +160,11 @@ const char* Il2CppMetadataUtils::GetTypeName(const XIl2CppType* type)
 
 void Il2CppMetadataUtils::GetMethodPointerForImage(XIl2CppImage* image)
 {
+    if (!s_MethodPointerData)
+    {
+        image->methodPointerCount = 0;
+        return;
+    }
     MethodPointerDataHeader* methodPointerDataHeader = (MethodPointerDataHeader*)s_MethodPointerData;
     const MethodPointerDataEntry* entries = reinterpret_cast<const MethodPointerDataEntry*>(reinterpret_cast<uint8_t*>(const_cast<void*>(s_MethodPointerData)) + 12);
     const char* nameData = reinterpret_cast<const char*>(reinterpret_cast<uint8_t*>(const_cast<void*>(s_MethodPointerData)) + methodPointerDataHeader->nameOffset);
@@ -223,6 +233,11 @@ XIl2CppType* Il2CppMetadataUtils::GetTypeFromIndex(TypeDefinitionIndex index)
         type->methodCount = typeDefinition->method_count;
         type->fieldStart = typeDefinition->fieldStart;
         type->fieldCount = typeDefinition->field_count;
+
+        if (typeDefinition->genericContainerIndex != -1)
+        {
+            //
+        }
 
         uint32_t methodEndIndex = type->methodStart + type->methodCount;
         for (uint32_t i = type->methodStart; i < methodEndIndex; i++)
@@ -350,7 +365,8 @@ void Il2CppMetadataUtils::PrintMethodsFromType(const XIl2CppType* xtype)
         const XIl2CppMethod* xmethod = s_MethodCache + i;
 
         const char* ps = GetParametersFromMethod(xmethod);
-        FileLog::Out().fmt("\t\tmethod[%d] = %s %s(%s), methodPointerIndex = 0x%016llX", i, GetTypeName(xmethod->returnType), xmethod->name, GetParametersFromMethod(xmethod), GetMethodPointerFromMethod(xmethod));
+        //FileLog::Out().fmt("\t\tmethod[%d] = %s %s(%s), methodPointerIndex = 0x%016llX", i, GetTypeName(xmethod->returnType), xmethod->name, GetParametersFromMethod(xmethod), GetMethodPointerFromMethod(xmethod));
+        FileLog::Out().fmt("\t\tmethod[%d] = %s %s(%s)", i, GetTypeName(xmethod->returnType), xmethod->name, GetParametersFromMethod(xmethod));
     }
 }
 

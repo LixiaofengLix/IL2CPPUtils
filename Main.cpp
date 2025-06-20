@@ -7,7 +7,7 @@
 
 int main() 
 {
-    bool ret = Il2CppMetadataUtils::LoadMetadataFile("D:\\CodeRepositories\\il2cpp\\IL2CPPUtils\\TestData\\global-metadata.dat");
+    bool ret = Il2CppMetadataUtils::LoadMetadataFile("D:\\kingsoft\\perftool\\IL2CPPUtils\\Data\\global-metadata.dat");
     if (!ret) {
         std::cerr << "Failed to open the file." << std::endl;
         return -1;
